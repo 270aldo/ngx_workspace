@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGX HYBRID Sales Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0A0A0A;
+            color: #E5E5E5;
+            min-height: 100vh;
+            padding: 24px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #6D00FF 0%, #9D4EDD 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            color: white;
+        }
+        
+        .logo-text {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        .logo-text span {
+            background: linear-gradient(135deg, #6D00FF, #9D4EDD);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .update-info {
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        
+        .metric-card {
+            background: linear-gradient(145deg, #151515 0%, #0D0D0D 100%);
+            border: 1px solid #1F1F1F;
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6D00FF, #9D4EDD);
+        }
+        
+        .metric-card.success::before {
+            background: linear-gradient(90deg, #00C853, #69F0AE);
+        }
+        
+        .metric-card.warning::before {
+            background: linear-gradient(90deg, #FF9100, #FFAB40);
+        }
+        
+        .metric-card.danger::before {
+            background: linear-gradient(90deg, #FF1744, #FF8A80);
+        }
+        
+        .metric-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #FFF;
+            line-height: 1;
+        }
+        
+        .metric-value.currency::before {
+            content: '$';
+            font-size: 20px;
+            color: #6D00FF;
+        }
+        
+        .metric-change {
+            font-size: 12px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .metric-change.positive { color: #00C853; }
+        .metric-change.negative { color: #FF1744; }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+        
+        .card {
+            background: linear-gradient(145deg, #151515 0%, #0D0D0D 100%);
+            border: 1px solid #1F1F1F;
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #FFF;
+        }
+        
+        .badge {
+            background: rgba(109, 0, 255, 0.15);
+            color: #9D4EDD;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            border: 1px solid rgba(109, 0, 255, 0.3);
+        }
+        
+        .funnel-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .funnel-stage {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .funnel-bar {
+            flex: 1;
+            height: 40px;
+            background: #1A1A1A;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .funnel-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6D00FF, #9D4EDD);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding-left: 12px;
+            transition: width 0.5s ease;
+        }
+        
+        .funnel-label {
+            width: 140px;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .funnel-count {
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .funnel-rate {
+            width: 60px;
+            text-align: right;
+            font-size: 12px;
+            color: #00C853;
+        }
+        
+        .leads-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .lead-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px;
+            background: #1A1A1A;
+            border-radius: 10px;
+            border-left: 3px solid #6D00FF;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .lead-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(109, 0, 255, 0.2);
+        }
+        
+        .lead-item.hot { border-left-color: #00C853; }
+        .lead-item.warm { border-left-color: #FF9100; }
+        .lead-item.call-scheduled { border-left-color: #00B0FF; }
+        
+        .lead-info h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #FFF;
+            margin-bottom: 2px;
+        }
+        
+        .lead-info p {
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .lead-meta {
+            text-align: right;
+        }
+        
+        .lead-score {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6D00FF;
+        }
+        
+        .lead-stage {
+            font-size: 10px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .chart-container {
+            height: 180px;
+            margin-top: 16px;
+        }
+        
+        .action-button {
+            background: linear-gradient(135deg, #6D00FF 0%, #4A00B0 100%);
+            color: #FFF;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(109, 0, 255, 0.3);
+            width: 100%;
+            margin-top: 16px;
+        }
+        
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(109, 0, 255, 0.4);
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            background: #1A1A1A;
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #FFF;
+            margin-top: 4px;
+        }
+        
+        .stat-item.highlight .stat-value {
+            color: #6D00FF;
+        }
+        
+        .calendar-preview {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-top: 16px;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            background: #1A1A1A;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .calendar-day.has-call {
+            background: rgba(109, 0, 255, 0.3);
+            color: #FFF;
+            border: 1px solid #6D00FF;
+        }
+        
+        .calendar-day.today {
+            background: #6D00FF;
+            color: #FFF;
+        }
+        
+        .objeciones-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .objecion-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: #1A1A1A;
+            border-radius: 8px;
+        }
+        
+        .objecion-name {
+            font-size: 12px;
+            color: #CCC;
+        }
+        
+        .objecion-bar {
+            width: 100px;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .objecion-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF9100, #FFAB40);
+            border-radius: 3px;
+        }
+        
+        .objecion-rate {
+            font-size: 11px;
+            color: #00C853;
+            width: 40px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">HYBRID</div>
+            <div class="logo-text">NGX <span>Sales</span></div>
+        </div>
+        <div class="update-info">
+            Actualizado: <span id="lastUpdate"></span>
+        </div>
+    </header>
+    
+    <section class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-label">MRR HYBRID</div>
+            <div class="metric-value currency">796</div>
+            <div class="metric-change positive">↑ $398 vs mes anterior</div>
+        </div>
+        <div class="metric-card success">
+            <div class="metric-label">Clientes Activos</div>
+            <div class="metric-value">4</div>
+            <div class="metric-change positive">↑ 2 este mes</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Tasa de Cierre</div>
+            <div class="metric-value">33%</div>
+            <div class="metric-change positive">↑ 8% vs meta</div>
+        </div>
+        <div class="metric-card warning">
+            <div class="metric-label">Leads en Pipeline</div>
+            <div class="metric-value">7</div>
+            <div class="metric-change">3 calificados esta semana</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Llamadas Esta Semana</div>
+            <div class="metric-value">3</div>
+            <div class="metric-change positive">Meta: 3 ✓</div>
+        </div>
+    </section>
+    
+    <section class="main-grid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Funnel de Conversión HYBRID</h3>
+                <span class="badge">Últimos 30 días</span>
+            </div>
+            <div class="funnel-container">
+                <div class="funnel-stage">
+                    <div class="funnel-label">Leads Totales</div>
+                    <div class="funnel-bar">
+                        <div class="funnel-fill" style="width: 100%">
+                            <span class="funnel-count">45</span>
+                        </div>
+                    </div>
+                    <div class="funnel-rate">100%</div>
+                </div>
+                <div class="funnel-stage">
+                    <div class="funnel-label">Calificados HYBRID</div>
+                    <div class="funnel-bar">
+                        <div class="funnel-fill" style="width: 35%">
+                            <span class="funnel-count">16</span>
+                        </div>
+                    </div>
+                    <div class="funnel-rate">35%</div>
+                </div>
+                <div class="funnel-stage">
+                    <div class="funnel-label">Llamada Agendada</div>
+                    <div class="funnel-bar">
+                        <div class="funnel-fill" style="width: 22%">
+                            <span class="funnel-count">10</span>
+                        </div>
+                    </div>
+                    <div class="funnel-rate">63%</div>
+                </div>
+                <div class="funnel-stage">
+                    <div class="funnel-label">Llamada Completada</div>
+                    <div class="funnel-bar">
+                        <div class="funnel-fill" style="width: 18%">
+                            <span class="funnel-count">8</span>
+                        </div>
+                    </div>
+                    <div class="funnel-rate">80%</div>
+                </div>
+                <div class="funnel-stage">
+                    <div class="funnel-label">Cerrados</div>
+                    <div class="funnel-bar">
+                        <div class="funnel-fill" style="width: 9%; background: linear-gradient(90deg, #00C853, #69F0AE)">
+                            <span class="funnel-count">4</span>
+                        </div>
+                    </div>
+                    <div class="funnel-rate">50%</div>
+                </div>
+            </div>
+            
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-label">Lead → Cliente</div>
+                    <div class="stat-value">8.9%</div>
+                </div>
+                <div class="stat-item highlight">
+                    <div class="stat-label">Ticket Promedio</div>
+                    <div class="stat-value">$597</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Ciclo de Venta</div>
+                    <div class="stat-value">12d</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Leads HYBRID Activos</h3>
+            </div>
+            <div class="leads-list">
+                <div class="lead-item call-scheduled">
+                    <div class="lead-info">
+                        <h4>María González</h4>
+                        <p>Llamada: Mañana 10:00 AM</p>
+                    </div>
+                    <div class="lead-meta">
+                        <div class="lead-score">Score: 11/14</div>
+                        <div class="lead-stage">Call Scheduled</div>
+                    </div>
+                </div>
+                <div class="lead-item hot">
+                    <div class="lead-info">
+                        <h4>Roberto Díaz</h4>
+                        <p>Post-llamada • Interesado</p>
+                    </div>
+                    <div class="lead-meta">
+                        <div class="lead-score">Score: 12/14</div>
+                        <div class="lead-stage">Pending Decision</div>
+                    </div>
+                </div>
+                <div class="lead-item warm">
+                    <div class="lead-info">
+                        <h4>Carmen Ruiz</h4>
+                        <p>NGX Transform • Hace 2 días</p>
+                    </div>
+                    <div class="lead-meta">
+                        <div class="lead-score">Score: 9/14</div>
+                        <div class="lead-stage">Qualified</div>
+                    </div>
+                </div>
+                <div class="lead-item warm">
+                    <div class="lead-info">
+                        <h4>Jorge Mendez</h4>
+                        <p>Metabolic Age • Hace 3 días</p>
+                    </div>
+                    <div class="lead-meta">
+                        <div class="lead-score">Score: 8/14</div>
+                        <div class="lead-stage">Qualified</div>
+                    </div>
+                </div>
+            </div>
+            <button class="action-button">+ Calificar Nuevo Lead</button>
+        </div>
+    </section>
+    
+    <section class="main-grid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Revenue HYBRID (6 meses)</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Objeciones Más Comunes</h3>
+            </div>
+            <div class="objeciones-list">
+                <div class="objecion-item">
+                    <span class="objecion-name">Precio alto</span>
+                    <div class="objecion-bar">
+                        <div class="objecion-fill" style="width: 70%"></div>
+                    </div>
+                    <span class="objecion-rate">60%</span>
+                </div>
+                <div class="objecion-item">
+                    <span class="objecion-name">Necesito pensarlo</span>
+                    <div class="objecion-bar">
+                        <div class="objecion-fill" style="width: 50%"></div>
+                    </div>
+                    <span class="objecion-rate">75%</span>
+                </div>
+                <div class="objecion-item">
+                    <span class="objecion-name">Prefiero ASCEND</span>
+                    <div class="objecion-bar">
+                        <div class="objecion-fill" style="width: 30%"></div>
+                    </div>
+                    <span class="objecion-rate">50%</span>
+                </div>
+                <div class="objecion-item">
+                    <span class="objecion-name">No tengo tiempo</span>
+                    <div class="objecion-bar">
+                        <div class="objecion-fill" style="width: 20%"></div>
+                    </div>
+                    <span class="objecion-rate">80%</span>
+                </div>
+            </div>
+            <p style="font-size: 10px; color: #666; margin-top: 12px; text-align: center;">
+                Barra = Frecuencia | % = Tasa de superación
+            </p>
+        </div>
+    </section>
+    
+    <script>
+        // Revenue Chart
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+        gradient.addColorStop(0, 'rgba(109, 0, 255, 0.5)');
+        gradient.addColorStop(1, 'rgba(109, 0, 255, 0.0)');
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                datasets: [{
+                    label: 'MRR HYBRID',
+                    data: [0, 199, 199, 398, 597, 796],
+                    borderColor: '#6D00FF',
+                    backgroundColor: gradient,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#6D00FF',
+                    pointBorderColor: '#FFF',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#1F1F1F' },
+                        ticks: {
+                            color: '#666',
+                            callback: v => '$' + v
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#666' }
+                    }
+                }
+            }
+        });
+        
+        // Update timestamp
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleString('es-MX', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    </script>
+</body>
+</html>

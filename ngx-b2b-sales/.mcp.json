@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "n8n": {
+      "url": "https://ngxaldo.app.n8n.cloud/mcp-server/http",
+      "description": "Automatización de workflows de ventas y seguimiento"
+    },
+    "notion": {
+      "url": "https://mcp.notion.com/mcp",
+      "description": "CRM de prospects y documentación de deals"
+    },
+    "linkedin": {
+      "url": "https://mcp.linkedin.com/mcp",
+      "description": "Outreach y publicación de contenido"
+    }
+  }
+}

@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGX Content Studio - Production Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6D00FF;
+            --primary-light: #8B33FF;
+            --background: #0A0A0A;
+            --card: #141414;
+            --card-hover: #1A1A1A;
+            --border: #2A2A2A;
+            --text: #FFFFFF;
+            --text-muted: #888888;
+            --success: #00FF88;
+            --warning: #FFB800;
+            --danger: #FF4444;
+            --info: #00D4FF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--card-hover);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .stat-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .stat-change.positive { color: var(--success); }
+        .stat-change.negative { color: var(--danger); }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .card-badge {
+            background: rgba(109, 0, 255, 0.2);
+            color: var(--primary-light);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Pipeline Kanban */
+        .pipeline {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        @media (max-width: 1200px) {
+            .pipeline {
+                grid-template-columns: repeat(5, 200px);
+            }
+        }
+
+        .pipeline-column {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            min-height: 300px;
+        }
+
+        .pipeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            background: var(--card);
+            border-radius: 8px;
+        }
+
+        .pipeline-header h4 {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .pipeline-count {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .pipeline-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pipeline-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .pipeline-item-type {
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+
+        .pipeline-item-title {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .pipeline-item-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .pipeline-item-tag {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .pipeline-item-tag.video {
+            background: rgba(255, 0, 100, 0.2);
+            color: #FF6B6B;
+        }
+
+        .pipeline-item-tag.image {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--info);
+        }
+
+        .pipeline-item-tag.podcast {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--success);
+        }
+
+        .pipeline-item-tag.social {
+            background: rgba(255, 184, 0, 0.2);
+            color: var(--warning);
+        }
+
+        /* Calendar */
+        .calendar-week {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .calendar-day {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 8px;
+            min-height: 120px;
+        }
+
+        .calendar-day.today {
+            border-color: var(--primary);
+            background: rgba(109, 0, 255, 0.1);
+        }
+
+        .calendar-day-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .calendar-day-name {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .calendar-day-num {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .calendar-event {
+            background: var(--card);
+            border-left: 3px solid var(--primary);
+            border-radius: 4px;
+            padding: 6px 8px;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+
+        .calendar-event.video { border-left-color: #FF6B6B; }
+        .calendar-event.podcast { border-left-color: var(--success); }
+        .calendar-event.social { border-left-color: var(--warning); }
+
+        /* Assets Pendientes */
+        .asset-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .asset-item {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .asset-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .asset-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(109, 0, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .asset-details h4 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .asset-details p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .asset-status {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .asset-status.pending {
+            background: rgba(255, 184, 0, 0.2);
+            color: var(--warning);
+        }
+
+        .asset-status.generating {
+            background: rgba(109, 0, 255, 0.2);
+            color: var(--primary-light);
+        }
+
+        .asset-status.ready {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--success);
+        }
+
+        /* Bottom Grid */
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        /* Metrics Charts */
+        .chart-container {
+            height: 180px;
+        }
+
+        /* Performance Table */
+        .performance-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .performance-table th,
+        .performance-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .performance-table th {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .performance-table td {
+            font-size: 14px;
+        }
+
+        .performance-metric {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .performance-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--background);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .performance-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* Tools Section */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .tool-card {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tool-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .tool-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .tool-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .tool-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+
+            .pipeline {
+                grid-template-columns: 180px;
+            }
+
+            .calendar-week {
+                grid-template-columns: repeat(7, 1fr);
+                font-size: 10px;
+            }
+
+            .tools-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎬 Content Studio - Production Dashboard</h1>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="viewCalendar()">📅 Calendario</button>
+            <button class="btn btn-primary" onclick="newContent()">+ Nuevo Contenido</button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📹</div>
+            <div class="stat-label">Videos Esta Semana</div>
+            <div class="stat-value" style="color: #FF6B6B;">4</div>
+            <div class="stat-change positive">↑ 1 vs semana pasada</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🎙️</div>
+            <div class="stat-label">Podcasts Mes</div>
+            <div class="stat-value" style="color: var(--success);">6</div>
+            <div class="stat-change positive">On track</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📱</div>
+            <div class="stat-label">Posts Programados</div>
+            <div class="stat-value" style="color: var(--warning);">12</div>
+            <div class="stat-change positive">Próximos 7 días</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🖼️</div>
+            <div class="stat-label">Assets Generados</div>
+            <div class="stat-value" style="color: var(--info);">28</div>
+            <div class="stat-change positive">↑ 40% vs mes pasado</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⏱️</div>
+            <div class="stat-label">Horas Producción</div>
+            <div class="stat-value" style="color: var(--primary-light);">18h</div>
+            <div class="stat-change negative">↓ 25% (AI boost)</div>
+        </div>
+    </div>
+
+    <!-- Pipeline Kanban -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+            <h3 class="card-title">📋 Pipeline de Producción</h3>
+            <span class="card-badge">17 items activos</span>
+        </div>
+        <div class="pipeline">
+            <!-- Ideas -->
+            <div class="pipeline-column">
+                <div class="pipeline-header">
+                    <h4>💡 Ideas</h4>
+                    <span class="pipeline-count">5</span>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">📹</div>
+                    <div class="pipeline-item-title">13 Agentes NGX Explained</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag video">Video</span>
+                        <span>YouTube</span>
+                    </div>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">🎙️</div>
+                    <div class="pipeline-item-title">Entrevista Dr. Sleep Expert</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag podcast">Podcast</span>
+                        <span>Ep. 24</span>
+                    </div>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">📱</div>
+                    <div class="pipeline-item-title">Carousel: BLAZE vs Otros</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag social">Social</span>
+                        <span>Instagram</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scripting -->
+            <div class="pipeline-column">
+                <div class="pipeline-header">
+                    <h4>✍️ Scripting</h4>
+                    <span class="pipeline-count">3</span>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">📹</div>
+                    <div class="pipeline-item-title">Mi Rutina con NGX GENESIS</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag video">Video</span>
+                        <span>Vlog</span>
+                    </div>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">🎙️</div>
+                    <div class="pipeline-item-title">Longevity 101</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag podcast">Podcast</span>
+                        <span>Solo ep</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Producción -->
+            <div class="pipeline-column">
+                <div class="pipeline-header">
+                    <h4>🎬 Producción</h4>
+                    <span class="pipeline-count">4</span>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">📹</div>
+                    <div class="pipeline-item-title">Coach Dashboard Demo</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag video">Video</span>
+                        <span>Filmando</span>
+                    </div>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">🖼️</div>
+                    <div class="pipeline-item-title">Thumbnails Semana 1</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag image">Image</span>
+                        <span>VEO/SORA</span>
+                    </div>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">🎙️</div>
+                    <div class="pipeline-item-title">Interview: Athlete X</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag podcast">Podcast</span>
+                        <span>Grabando</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edición -->
+            <div class="pipeline-column">
+                <div class="pipeline-header">
+                    <h4>✂️ Edición</h4>
+                    <span class="pipeline-count">3</span>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">📹</div>
+                    <div class="pipeline-item-title">Workout Tips Shorts x5</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag video">Video</span>
+                        <span>60% done</span>
+                    </div>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">🎙️</div>
+                    <div class="pipeline-item-title">Ep. 23: Nutrition Myths</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag podcast">Podcast</span>
+                        <span>Mastering</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Publicado -->
+            <div class="pipeline-column">
+                <div class="pipeline-header">
+                    <h4>🚀 Publicado</h4>
+                    <span class="pipeline-count">2</span>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">📹</div>
+                    <div class="pipeline-item-title">NGX HYBRID Launch Video</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag video">Video</span>
+                        <span>15K views</span>
+                    </div>
+                </div>
+                <div class="pipeline-item">
+                    <div class="pipeline-item-type">📱</div>
+                    <div class="pipeline-item-title">Week 48 Content Pack</div>
+                    <div class="pipeline-item-meta">
+                        <span class="pipeline-item-tag social">Social</span>
+                        <span>12 posts</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+        <!-- Calendar -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📅 Esta Semana</h3>
+                <span class="card-badge">Semana 52</span>
+            </div>
+            <div class="calendar-week">
+                <div class="calendar-day">
+                    <div class="calendar-day-header">
+                        <span class="calendar-day-name">Lun</span>
+                        <span class="calendar-day-num">30</span>
+                    </div>
+                    <div class="calendar-event video">📹 YT Upload</div>
+                    <div class="calendar-event social">📱 IG Stories</div>
+                </div>
+                <div class="calendar-day today">
+                    <div class="calendar-day-header">
+                        <span class="calendar-day-name">Mar</span>
+                        <span class="calendar-day-num">31</span>
+                    </div>
+                    <div class="calendar-event podcast">🎙️ Record Ep24</div>
+                    <div class="calendar-event social">📱 Carousel</div>
+                </div>
+                <div class="calendar-day">
+                    <div class="calendar-day-header">
+                        <span class="calendar-day-name">Mié</span>
+                        <span class="calendar-day-num">1</span>
+                    </div>
+                    <div class="calendar-event video">📹 Shorts x3</div>
+                </div>
+                <div class="calendar-day">
+                    <div class="calendar-day-header">
+                        <span class="calendar-day-name">Jue</span>
+                        <span class="calendar-day-num">2</span>
+                    </div>
+                    <div class="calendar-event podcast">🎙️ Edit + Pub</div>
+                    <div class="calendar-event social">📱 Reels</div>
+                </div>
+                <div class="calendar-day">
+                    <div class="calendar-day-header">
+                        <span class="calendar-day-name">Vie</span>
+                        <span class="calendar-day-num">3</span>
+                    </div>
+                    <div class="calendar-event video">📹 YT Long</div>
+                </div>
+                <div class="calendar-day">
+                    <div class="calendar-day-header">
+                        <span class="calendar-day-name">Sáb</span>
+                        <span class="calendar-day-num">4</span>
+                    </div>
+                    <div class="calendar-event social">📱 IG Live</div>
+                </div>
+                <div class="calendar-day">
+                    <div class="calendar-day-header">
+                        <span class="calendar-day-name">Dom</span>
+                        <span class="calendar-day-num">5</span>
+                    </div>
+                    <div class="calendar-event" style="border-left-color: var(--text-muted);">📋 Plan Sem</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar: Assets + Tools -->
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+            <!-- Assets Pendientes -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🖼️ Assets Pendientes</h3>
+                </div>
+                <div class="asset-list">
+                    <div class="asset-item">
+                        <div class="asset-info">
+                            <div class="asset-icon">🎨</div>
+                            <div class="asset-details">
+                                <h4>Thumbnail Ep. 24</h4>
+                                <p>SORA 2 • Podcast</p>
+                            </div>
+                        </div>
+                        <span class="asset-status generating">Generando</span>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-info">
+                            <div class="asset-icon">🗣️</div>
+                            <div class="asset-details">
+                                <h4>VO: Intro Video</h4>
+                                <p>ElevenLabs • 45s</p>
+                            </div>
+                        </div>
+                        <span class="asset-status ready">Listo</span>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-info">
+                            <div class="asset-icon">🎬</div>
+                            <div class="asset-details">
+                                <h4>B-Roll Workout</h4>
+                                <p>VEO 3.1 • 10 clips</p>
+                            </div>
+                        </div>
+                        <span class="asset-status pending">Pendiente</span>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-info">
+                            <div class="asset-icon">📝</div>
+                            <div class="asset-details">
+                                <h4>Captions ES/EN</h4>
+                                <p>Whisper • Ep. 23</p>
+                            </div>
+                        </div>
+                        <span class="asset-status ready">Listo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Tools -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🤖 AI Tools</h3>
+                </div>
+                <div class="tools-grid">
+                    <div class="tool-card" onclick="openTool('veo')">
+                        <div class="tool-icon">🎥</div>
+                        <div class="tool-name">VEO 3.1</div>
+                        <div class="tool-desc">Video Gen</div>
+                    </div>
+                    <div class="tool-card" onclick="openTool('sora')">
+                        <div class="tool-icon">🎨</div>
+                        <div class="tool-name">SORA 2</div>
+                        <div class="tool-desc">Video/Image</div>
+                    </div>
+                    <div class="tool-card" onclick="openTool('elevenlabs')">
+                        <div class="tool-icon">🗣️</div>
+                        <div class="tool-name">ElevenLabs</div>
+                        <div class="tool-desc">Voice AI</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Grid: Metrics -->
+    <div class="bottom-grid">
+        <!-- Content Performance -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📊 Performance Este Mes</h3>
+            </div>
+            <table class="performance-table">
+                <thead>
+                    <tr>
+                        <th>Plataforma</th>
+                        <th>Views</th>
+                        <th>Engagement</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>📹 YouTube</td>
+                        <td>45.2K</td>
+                        <td>
+                            <div class="performance-metric">
+                                <span>6.2%</span>
+                                <div class="performance-bar">
+                                    <div class="performance-bar-fill" style="width: 62%; background: #FF6B6B;"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color: var(--success);">↑ 18%</td>
+                    </tr>
+                    <tr>
+                        <td>📱 Instagram</td>
+                        <td>128K</td>
+                        <td>
+                            <div class="performance-metric">
+                                <span>4.8%</span>
+                                <div class="performance-bar">
+                                    <div class="performance-bar-fill" style="width: 48%; background: var(--warning);"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color: var(--success);">↑ 25%</td>
+                    </tr>
+                    <tr>
+                        <td>🎙️ Podcast</td>
+                        <td>8.5K</td>
+                        <td>
+                            <div class="performance-metric">
+                                <span>78%</span>
+                                <div class="performance-bar">
+                                    <div class="performance-bar-fill" style="width: 78%; background: var(--success);"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color: var(--success);">↑ 12%</td>
+                    </tr>
+                    <tr>
+                        <td>🐦 Twitter/X</td>
+                        <td>32K</td>
+                        <td>
+                            <div class="performance-metric">
+                                <span>3.1%</span>
+                                <div class="performance-bar">
+                                    <div class="performance-bar-fill" style="width: 31%; background: var(--info);"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color: var(--text-muted);">→ 0%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Content Output Chart -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📈 Output por Mes</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="outputChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Content -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🏆 Top Content (Diciembre)</h3>
+            </div>
+            <div class="asset-list">
+                <div class="asset-item">
+                    <div class="asset-info">
+                        <div class="asset-icon">📹</div>
+                        <div class="asset-details">
+                            <h4>NGX HYBRID Launch Video</h4>
+                            <p>15,234 views • 8.2% engagement</p>
+                        </div>
+                    </div>
+                    <span style="font-size: 20px;">🥇</span>
+                </div>
+                <div class="asset-item">
+                    <div class="asset-info">
+                        <div class="asset-icon">📱</div>
+                        <div class="asset-details">
+                            <h4>Carousel: 13 Agents</h4>
+                            <p>12,456 reach • 892 saves</p>
+                        </div>
+                    </div>
+                    <span style="font-size: 20px;">🥈</span>
+                </div>
+                <div class="asset-item">
+                    <div class="asset-info">
+                        <div class="asset-icon">🎙️</div>
+                        <div class="asset-details">
+                            <h4>Ep. 22: Sleep Science</h4>
+                            <p>2,345 listens • 92% completion</p>
+                        </div>
+                    </div>
+                    <span style="font-size: 20px;">🥉</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Output Chart
+        const outputCtx = document.getElementById('outputChart').getContext('2d');
+        new Chart(outputCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Sep', 'Oct', 'Nov', 'Dic'],
+                datasets: [
+                    {
+                        label: 'Videos',
+                        data: [8, 12, 14, 16],
+                        backgroundColor: '#FF6B6B',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Podcasts',
+                        data: [4, 4, 5, 6],
+                        backgroundColor: '#00FF88',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Social',
+                        data: [30, 35, 42, 48],
+                        backgroundColor: '#FFB800',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#888',
+                            usePointStyle: true,
+                            padding: 16
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#888' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#888' }
+                    }
+                }
+            }
+        });
+
+        // Actions
+        function newContent() {
+            alert('Usar comando: /create-content [tipo]\n\nTipos:\n- video\n- podcast\n- social\n- image');
+        }
+
+        function viewCalendar() {
+            alert('Abriendo calendario de contenido...');
+        }
+
+        function openTool(tool) {
+            const tools = {
+                'veo': 'VEO 3.1 - /veo-generate',
+                'sora': 'SORA 2 - /sora-generate',
+                'elevenlabs': 'ElevenLabs - /voice-generate'
+            };
+            alert(`Abriendo ${tools[tool]}`);
+        }
+    </script>
+</body>
+</html>

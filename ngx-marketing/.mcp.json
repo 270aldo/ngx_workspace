@@ -1,0 +1,20 @@
+{
+  "$schema": "https://code.claude.com/schemas/mcp.json",
+  "mcpServers": {
+    "n8n": {
+      "type": "url",
+      "url": "https://ngxaldo.app.n8n.cloud/mcp-server/http",
+      "description": "n8n workflow automation - Execute marketing automation workflows"
+    },
+    "canva": {
+      "type": "url", 
+      "url": "https://mcp.canva.com/mcp",
+      "description": "Canva design generation - Create visual assets for marketing"
+    },
+    "notion": {
+      "type": "url",
+      "url": "https://mcp.notion.com/mcp",
+      "description": "Notion integration - Documentation and content planning"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Node (if any)
+node_modules/
+
+# Python (if any)
+__pycache__/
+*.pyc
+.venv/
+
+# Outputs (generated content - optional to track)
+# outputs/
+
+# Sensitive
+*.key
+*.pem
+credentials.json

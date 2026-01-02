@@ -1,0 +1,53 @@
+# NGX Marketing Command Center - .gitignore
+
+# Outputs generados (contenido que cambia frecuentemente)
+outputs/emails/*
+outputs/social/*
+outputs/ads/*
+outputs/reports/*
+outputs/audits/*
+!outputs/**/.gitkeep
+
+# Archivos temporales
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Archivos de configuración local (si contienen secretos)
+.env
+.env.local
+*.local.json
+
+# Cache
+.cache/
+__pycache__/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node modules (si se usan scripts)
+node_modules/
+
+# Backups
+*.bak
+*.backup
+
+# Archivos grandes de media
+*.mp4
+*.mov
+*.avi
+*.mp3
+*.wav
+
+# Notas personales
+notes/
+scratch/
+TODO.md

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGX B2B Pipeline Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0A0A0A;
+            color: #E5E5E5;
+            min-height: 100vh;
+            padding: 24px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #6D00FF 0%, #4A00B0 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .logo-text {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .logo-text span {
+            color: #6D00FF;
+        }
+        
+        .update-info {
+            color: #888;
+            font-size: 14px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        
+        .metric-card {
+            background: linear-gradient(145deg, #151515 0%, #0D0D0D 100%);
+            border: 1px solid #222;
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6D00FF, #9D4EDD);
+        }
+        
+        .metric-card.success::before {
+            background: linear-gradient(90deg, #00C853, #69F0AE);
+        }
+        
+        .metric-card.warning::before {
+            background: linear-gradient(90deg, #FFD600, #FFFF00);
+        }
+        
+        .metric-card.danger::before {
+            background: linear-gradient(90deg, #FF1744, #FF8A80);
+        }
+        
+        .metric-label {
+            font-size: 13px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #FFF;
+        }
+        
+        .metric-change {
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        
+        .metric-change.positive {
+            color: #00C853;
+        }
+        
+        .metric-change.negative {
+            color: #FF1744;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: linear-gradient(145deg, #151515 0%, #0D0D0D 100%);
+            border: 1px solid #222;
+            border-radius: 16px;
+            padding: 24px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #FFF;
+        }
+        
+        .badge {
+            background: rgba(109, 0, 255, 0.2);
+            color: #6D00FF;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .pipeline-stages {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        
+        .stage {
+            flex: 1;
+            min-width: 120px;
+            background: #1A1A1A;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .stage-name {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .stage-count {
+            font-size: 28px;
+            font-weight: 700;
+            color: #FFF;
+        }
+        
+        .stage-value {
+            font-size: 12px;
+            color: #6D00FF;
+            margin-top: 4px;
+        }
+        
+        .stage-bar {
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+        
+        .stage-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6D00FF, #9D4EDD);
+            border-radius: 2px;
+        }
+        
+        .deals-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .deal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: #1A1A1A;
+            border-radius: 12px;
+            border-left: 3px solid #6D00FF;
+        }
+        
+        .deal-item.hot {
+            border-left-color: #00C853;
+        }
+        
+        .deal-item.warm {
+            border-left-color: #FFD600;
+        }
+        
+        .deal-item.cold {
+            border-left-color: #888;
+        }
+        
+        .deal-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #FFF;
+            margin-bottom: 4px;
+        }
+        
+        .deal-info p {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .deal-meta {
+            text-align: right;
+        }
+        
+        .deal-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6D00FF;
+        }
+        
+        .deal-stage {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        .activities-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .activity-item {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(109, 0, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .activity-content h4 {
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFF;
+            margin-bottom: 2px;
+        }
+        
+        .activity-content p {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .chart-container {
+            height: 200px;
+            margin-top: 16px;
+        }
+        
+        .action-button {
+            background: linear-gradient(135deg, #6D00FF 0%, #4A00B0 100%);
+            color: #FFF;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(109, 0, 255, 0.3);
+        }
+        
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(109, 0, 255, 0.4);
+        }
+        
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .forecast-item {
+            background: #1A1A1A;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .forecast-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        
+        .forecast-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #FFF;
+        }
+        
+        .forecast-item.conservative .forecast-value { color: #888; }
+        .forecast-item.probable .forecast-value { color: #6D00FF; }
+        .forecast-item.optimistic .forecast-value { color: #00C853; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">B2B</div>
+            <div class="logo-text">NGX <span>Pipeline</span></div>
+        </div>
+        <div class="update-info">
+            Última actualización: <span id="lastUpdate">27 Dic 2025, 16:45</span>
+        </div>
+    </header>
+    
+    <section class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-label">Pipeline Total</div>
+            <div class="metric-value">$4,485</div>
+            <div class="metric-change positive">↑ 15% vs semana anterior</div>
+        </div>
+        <div class="metric-card success">
+            <div class="metric-label">Deals Activos</div>
+            <div class="metric-value">12</div>
+            <div class="metric-change positive">↑ 3 nuevos esta semana</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Win Rate</div>
+            <div class="metric-value">33%</div>
+            <div class="metric-change positive">↑ 8% vs mes anterior</div>
+        </div>
+        <div class="metric-card warning">
+            <div class="metric-label">Días Promedio Cierre</div>
+            <div class="metric-value">18</div>
+            <div class="metric-change negative">↑ 3 días vs meta</div>
+        </div>
+    </section>
+    
+    <section class="main-grid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Pipeline por Etapa</h3>
+                <span class="badge">Founding Coaches</span>
+            </div>
+            <div class="pipeline-stages">
+                <div class="stage">
+                    <div class="stage-name">Identified</div>
+                    <div class="stage-count">8</div>
+                    <div class="stage-value">$1,592</div>
+                    <div class="stage-bar"><div class="stage-bar-fill" style="width: 80%"></div></div>
+                </div>
+                <div class="stage">
+                    <div class="stage-name">Contacted</div>
+                    <div class="stage-count">5</div>
+                    <div class="stage-value">$995</div>
+                    <div class="stage-bar"><div class="stage-bar-fill" style="width: 50%"></div></div>
+                </div>
+                <div class="stage">
+                    <div class="stage-name">Discovery</div>
+                    <div class="stage-count">3</div>
+                    <div class="stage-value">$597</div>
+                    <div class="stage-bar"><div class="stage-bar-fill" style="width: 30%"></div></div>
+                </div>
+                <div class="stage">
+                    <div class="stage-name">Demo</div>
+                    <div class="stage-count">2</div>
+                    <div class="stage-value">$398</div>
+                    <div class="stage-bar"><div class="stage-bar-fill" style="width: 20%"></div></div>
+                </div>
+                <div class="stage">
+                    <div class="stage-name">Proposal</div>
+                    <div class="stage-count">1</div>
+                    <div class="stage-value">$199</div>
+                    <div class="stage-bar"><div class="stage-bar-fill" style="width: 10%"></div></div>
+                </div>
+                <div class="stage">
+                    <div class="stage-name">Negotiation</div>
+                    <div class="stage-count">1</div>
+                    <div class="stage-value">$199</div>
+                    <div class="stage-bar"><div class="stage-bar-fill" style="width: 10%"></div></div>
+                </div>
+            </div>
+            
+            <div class="card-header" style="margin-top: 24px;">
+                <h3 class="card-title">Forecast 30 Días</h3>
+            </div>
+            <div class="forecast-grid">
+                <div class="forecast-item conservative">
+                    <div class="forecast-label">Conservador</div>
+                    <div class="forecast-value">$398</div>
+                </div>
+                <div class="forecast-item probable">
+                    <div class="forecast-label">Probable</div>
+                    <div class="forecast-value">$796</div>
+                </div>
+                <div class="forecast-item optimistic">
+                    <div class="forecast-label">Optimista</div>
+                    <div class="forecast-value">$1,194</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Top Deals</h3>
+            </div>
+            <div class="deals-list">
+                <div class="deal-item hot">
+                    <div class="deal-info">
+                        <h4>Carlos Mendoza</h4>
+                        <p>CrossFit Hermosillo • 25 clientes</p>
+                    </div>
+                    <div class="deal-meta">
+                        <div class="deal-value">$199/mes</div>
+                        <div class="deal-stage">Negotiation</div>
+                    </div>
+                </div>
+                <div class="deal-item hot">
+                    <div class="deal-info">
+                        <h4>Ana Rodríguez</h4>
+                        <p>Functional Training • 18 clientes</p>
+                    </div>
+                    <div class="deal-meta">
+                        <div class="deal-value">$199/mes</div>
+                        <div class="deal-stage">Proposal</div>
+                    </div>
+                </div>
+                <div class="deal-item warm">
+                    <div class="deal-info">
+                        <h4>Miguel Torres</h4>
+                        <p>Online Coach • 30 clientes</p>
+                    </div>
+                    <div class="deal-meta">
+                        <div class="deal-value">$199/mes</div>
+                        <div class="deal-stage">Demo</div>
+                    </div>
+                </div>
+                <div class="deal-item warm">
+                    <div class="deal-info">
+                        <h4>Laura Sánchez</h4>
+                        <p>Nutrición Deportiva • 12 clientes</p>
+                    </div>
+                    <div class="deal-meta">
+                        <div class="deal-value">$199/mes</div>
+                        <div class="deal-stage">Demo</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="main-grid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Conversión por Etapa</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="conversionChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Actividad Reciente</h3>
+            </div>
+            <div class="activities-list">
+                <div class="activity-item">
+                    <div class="activity-icon">📞</div>
+                    <div class="activity-content">
+                        <h4>Discovery call con Carlos Mendoza</h4>
+                        <p>Hace 2 horas • Dolor confirmado: escalabilidad</p>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">📧</div>
+                    <div class="activity-content">
+                        <h4>Propuesta enviada a Ana Rodríguez</h4>
+                        <p>Hace 5 horas • Awaiting response</p>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">🔍</div>
+                    <div class="activity-content">
+                        <h4>3 nuevos prospects identificados</h4>
+                        <p>Hoy • Via LinkedIn search</p>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">✅</div>
+                    <div class="activity-content">
+                        <h4>Demo completada con Miguel Torres</h4>
+                        <p>Ayer • Interés alto, siguiente: propuesta</p>
+                    </div>
+                </div>
+            </div>
+            <button class="action-button" style="margin-top: 20px; width: 100%;">
+                + Agregar Actividad
+            </button>
+        </div>
+    </section>
+    
+    <script>
+        // Conversion Chart
+        const ctx = document.getElementById('conversionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Identified→Contacted', 'Contacted→Discovery', 'Discovery→Demo', 'Demo→Proposal', 'Proposal→Won'],
+                datasets: [{
+                    label: 'Conversion Rate',
+                    data: [62, 60, 67, 50, 50],
+                    backgroundColor: 'rgba(109, 0, 255, 0.6)',
+                    borderColor: '#6D00FF',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            color: '#222'
+                        },
+                        ticks: {
+                            color: '#888',
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#888',
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Update timestamp
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleString('es-MX', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    </script>
+</body>
+</html>

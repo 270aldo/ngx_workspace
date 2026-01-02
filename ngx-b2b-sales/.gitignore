@@ -1,0 +1,30 @@
+# Outputs generados
+outputs/proposals/*.md
+outputs/emails/*.md
+outputs/scripts/*.md
+outputs/reports/*.md
+outputs/pipeline/*.md
+outputs/linkedin/*.md
+
+# Archivos temporales
+*.tmp
+*.temp
+*.log
+.DS_Store
+
+# Node
+node_modules/
+package-lock.json
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Datos sensibles
+*.credentials
+*.secrets
